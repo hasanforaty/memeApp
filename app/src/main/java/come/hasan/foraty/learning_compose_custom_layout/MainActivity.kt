@@ -7,6 +7,7 @@ import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
@@ -19,6 +20,7 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.constraintlayout.compose.ConstraintLayout
 import come.hasan.foraty.learning_compose_custom_layout.ui.theme.LearningComposeCustomLayoutTheme
 import kotlin.math.max
 
@@ -38,20 +40,22 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Greeting(name: String) {
-    Text(text = "Hello $name",
+    Text(
+        text = "Hello $name",
         Modifier
             .firstBaseLineTo(25.dp)
-            .leftPadding(25.dp))
+            .leftPadding(25.dp)
+    )
 }
 
 fun Modifier.leftPadding(
-    leftPadding:Dp
+    leftPadding: Dp
 ) = this.then(
-    layout{measurable, constraints ->
+    layout { measurable, constraints ->
         val placeable = measurable.measure(constraints)
         val width = placeable.width + leftPadding.roundToPx()
-        layout(width = width,placeable.height){
-            placeable.placeRelative(x = leftPadding.roundToPx(),y = 0)
+        layout(width = width, placeable.height) {
+            placeable.placeRelative(x = leftPadding.roundToPx(), y = 0)
         }
     }
 )
@@ -92,7 +96,8 @@ fun MyOwnColumn(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    Layout(content = content, modifier = modifier) { measurable, constraints ->
+    Layout(content = content, modifier = modifier)
+    { measurable, constraints ->
         val placable = measurable.map {
             it.measure(constraints)
         }
@@ -109,36 +114,36 @@ fun MyOwnColumn(
 @Composable
 fun StaggeredGrid(
     modifier: Modifier = Modifier,
-    rows:Int = 3,
+    rows: Int = 3,
     content: @Composable () -> Unit
-){
-    Layout(content = content,modifier = modifier){ measures , constrains ->
+) {
+    Layout(content = content, modifier = modifier) { measures, constrains ->
         val rowsHeight = IntArray(rows)
         val rowsWidth = IntArray(rows)
-        val placeables = measures.mapIndexed{index, measurable ->
+        val placeables = measures.mapIndexed { index, measurable ->
             val placeable = measurable.measure(constrains)
             val row = index % rows
             rowsWidth[row] += placeable.width
-            rowsHeight[row] = max(rowsHeight[row],placeable.height)
+            rowsHeight[row] = max(rowsHeight[row], placeable.height)
             placeable
         }
         val width = rowsWidth.maxOrNull()
-                ?.coerceIn(constrains.minWidth.rangeTo(constrains.maxWidth))?:constrains.minWidth
+            ?.coerceIn(constrains.minWidth.rangeTo(constrains.maxWidth)) ?: constrains.minWidth
         val height = rowsHeight.sumOf { it }
             .coerceIn(constrains.minHeight.rangeTo(constrains.maxHeight))
 
-        val rowsY = IntArray(rows){ 0 }
-        for(i in 1 until rows){
-            rowsY[i] = rowsY[i-1]+rowsHeight[i-1]
+        val rowsY = IntArray(rows) { 0 }
+        for (i in 1 until rows) {
+            rowsY[i] = rowsY[i - 1] + rowsHeight[i - 1]
         }
 
-        layout(width = width,height = height){
-            val rowsX = IntArray(rows){ 0 }
+        layout(width = width, height = height) {
+            val rowsX = IntArray(rows) { 0 }
 
-            placeables.forEachIndexed{ index, placeable ->
-                val row = index% rows
+            placeables.forEachIndexed { index, placeable ->
+                val row = index % rows
                 placeable.placeRelative(x = rowsX[row], y = rowsY[row])
-                rowsX[row]+=placeable.width
+                rowsX[row] += placeable.width
             }
 
         }
@@ -153,13 +158,47 @@ val topics = listOf(
 
 @Preview
 @Composable
-fun PrevGrid(){
+fun PrevGrid() {
     Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
         StaggeredGrid(rows = 5) {
-            for (topic in topics){
+            for (topic in topics) {
                 Greeting(name = topic)
             }
         }
     }
 
+}
+@Preview
+@Composable
+fun MyConstraintLayout(){
+    ConstraintLayout {
+        val (button1,button2,text) = createRefs()
+        Button(
+            onClick = { /*TODO*/ }
+            ,modifier = Modifier.constrainAs(button1){
+                top.linkTo(parent.top,margin = 16.dp)
+            }
+        ) {
+            Text(text = "Button 1 ")
+        }
+        Text(
+            text = "text "
+            , modifier = Modifier.constrainAs(text){
+                top.linkTo(button1.bottom,margin = 16.dp)
+                centerAround(button1.end)
+            }
+        )
+        val barrier = createEndBarrier(button1,text)
+        Button(
+            onClick = { /* Do something */ },
+            modifier = Modifier.constrainAs(button2) {
+                top.linkTo(parent.top, margin = 16.dp)
+                start.linkTo(barrier)
+            }
+        ) {
+            Text("Button 2")
+        }
+
+
+    }
 }
